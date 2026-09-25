@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-labelledby="title description">
+  <title id="title">No RGB</title>
+  <desc id="description">No RGB, an Omarchy bar plugin that turns the RGB lighting on or off through OpenRGB, globally or component by component.</desc>
+  <defs>
+    <linearGradient id="spectrum" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fb4934"/>
+      <stop offset="0.25" stop-color="#fabd2f"/>
+      <stop offset="0.5" stop-color="#b8bb26"/>
+      <stop offset="0.75" stop-color="#83a598"/>
+      <stop offset="1" stop-color="#d3869b"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fb4934" stop-opacity="0"/>
+      <stop offset="0.5" stop-color="#fb4934" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#fb4934" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="320" rx="24" fill="#000000"/>
+  <rect x="1" y="1" width="1278" height="318" rx="23" fill="none" stroke="#3c3836" stroke-width="2"/>
+
+  <!-- LED strip, drawn like the bar glyph: lit on the left, dark on the right -->
+  <g transform="translate(110 118) rotate(-20 110 40)">
+    <rect x="0" y="0" width="240" height="80" rx="16" fill="none" stroke="#ebdbb2" stroke-width="10"/>
+    <circle cx="40" cy="40" r="14" fill="#fb4934"/>
+    <circle cx="90" cy="40" r="14" fill="#b8bb26"/>
+    <circle cx="140" cy="40" r="14" fill="none" stroke="#504945" stroke-width="6"/>
+    <circle cx="190" cy="40" r="14" fill="none" stroke="#504945" stroke-width="6"/>
+  </g>
+  <rect x="110" y="250" width="250" height="6" rx="3" fill="url(#spectrum)" opacity="0.8"/>
+
+  <text x="440" y="150" fill="#ebdbb2" font-family="JetBrains Mono, DejaVu Sans Mono, Menlo, monospace" font-size="96" font-weight="700">No RGB</text>
+  <text x="444" y="202" fill="#928374" font-family="JetBrains Mono, DejaVu Sans Mono, Menlo, monospace" font-size="28">RGB lighting on or off, from the Omarchy bar.</text>
+  <text x="444" y="244" fill="#fb4934" font-family="JetBrains Mono, DejaVu Sans Mono, Menlo, monospace" font-size="24">RAM  |  GPU  |  cooler  |  motherboard  |  one click</text>
+  <rect x="440" y="266" width="720" height="3" fill="url(#glow)"/>
+</svg>
