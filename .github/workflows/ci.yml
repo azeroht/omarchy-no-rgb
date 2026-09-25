@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+# Read-only token: pull requests from forks run with no write access.
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request cancels the older run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: node:22-bookworm
+      env:
+        LANG: C.UTF-8
+      options: --init
+    steps:
+      - name: Install the tools
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq git make shellcheck jq >/dev/null
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Lint
+        run: make lint
+      - name: Test
+        run: make test
