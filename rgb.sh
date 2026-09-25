@@ -68,7 +68,10 @@ read_state() {
 # Applies the jq filter given as arguments to the saved state.
 write_state() {
   temporary="$(mktemp "${state_file}.XXXXXX")"
-  read_state | jq "$@" >"${temporary}"
+  if ! read_state | jq "$@" >"${temporary}"; then
+    rm -f "${temporary}"
+    exit 1
+  fi
   mv "${temporary}" "${state_file}"
 }
 
@@ -183,16 +186,18 @@ wait_for_server() {
   fail "OpenRGB server not ready after ${restore_timeout} s"
 }
 
-# Darkens the excluded components: black in Direct mode, which every device
-# supports, addressed by index in a single call.
-darken_excluded() {
-  excluded="$(read_state | jq -c '.off')"
-  [ "${excluded}" = "[]" ] && return 0
+# Sends $2 in Direct mode, which every device supports, to every device named
+# in the JSON array $1: addressed by index, in a single call, so that devices
+# sharing a name (RAM sticks) are all reached.
+direct_color() {
+  [ "$1" = "[]" ] && return 0
   listing="$(devices)" || fail "${unreachable_message}"
+  names="$1"
+  color="$2"
   set --
-  for index in $(printf '%s\n' "${listing}" | jq -R -r --argjson excluded "${excluded}" \
-    'split("\t") as $fields | select(($excluded | index([$fields[1]])) != null) | $fields[0]'); do
-    set -- "$@" --device "${index}" --mode Direct --color 000000
+  for index in $(printf '%s\n' "${listing}" | jq -R -r --argjson names "${names}" \
+    'split("\t") as $fields | select(($names | index([$fields[1]])) != null) | $fields[0]'); do
+    set -- "$@" --device "${index}" --mode Direct --color "${color}"
   done
   [ $# -gt 0 ] && client "$@" >/dev/null
   return 0
@@ -215,15 +220,17 @@ EOF
   output="$(client "$@")"
   # Devices without that mode (some coolers only have Direct) get the color
   # in Direct mode.
-  printf '%s\n' "${output}" | sort -u | while IFS= read -r line; do
+  refused="$(printf '%s\n' "${output}" | while IFS= read -r line; do
     case "${line}" in
       "Error: Mode '"*"' not available for device '"*"'")
         device="${line##*"for device '"}"
-        client --device "${device%\'}" --mode Direct --color "${color}" >/dev/null
+        printf '%s\n' "${device%\'}"
         ;;
     esac
-  done
-  [ "${enabled}" = "true" ] && darken_excluded
+  done | jq -R -s -c 'split("\n") | map(select(length > 0)) | unique')"
+  direct_color "${refused}" "${color}"
+  # Excluded components: black, over whatever they just received.
+  [ "${enabled}" = "true" ] && direct_color "$(read_state | jq -c '.off')" 000000
   return 0
 }
 

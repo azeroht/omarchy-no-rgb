@@ -13,9 +13,9 @@ trap 'rm -rf "$STUBS"' EXIT
 PARALLEL_CALLS=8
 failures=0
 
-# openrgb stub: records every call, lists three devices (two sharing a name,
-# like RAM sticks), refuses any mode but Direct for the cooler like the real
-# one does, lists nothing with NO_DEVICES, nothing on the first EMPTY_POLLS
+# openrgb stub: records every call, lists four devices (two RAM sticks and
+# two coolers sharing a name), refuses any mode but Direct for the coolers
+# like the real one does (one error line per device), lists nothing with NO_DEVICES, nothing on the first EMPTY_POLLS
 # polls, fails the listing with LIST_FAILS, and hangs with NO_SERVER.
 cat >"$STUBS/openrgb" <<'EOF'
 #!/bin/sh
@@ -28,7 +28,7 @@ case "$*" in
     echo "$polls" >"$directory/polls"
     [ -n "${NO_DEVICES:-}" ] && exit 0
     [ "$polls" -le "${EMPTY_POLLS:-0}" ] && exit 0
-    printf '0: ENE DRAM\n  Type:           DRAM\n  Modes: Static\n1: Commander Core\n  Type:           Cooler\n2: ENE DRAM\n  Type:           DRAM\n'
+    printf '0: ENE DRAM\n  Type:           DRAM\n  Modes: Static\n1: Commander Core\n  Type:           Cooler\n2: ENE DRAM\n  Type:           DRAM\n3: Commander Core\n  Type:           Cooler\n'
     exit 0
     ;;
 esac
@@ -36,7 +36,7 @@ printf '%s\n' "$*" >>"$directory/calls.log"
 case "$*" in
   *--device*) ;;
   *"--mode Direct"*) ;;
-  *--mode*) echo "Error: Mode 'X' not available for device 'Commander Core'" ;;
+  *--mode*) printf "Error: Mode 'X' not available for device 'Commander Core'\n%.0s" 1 2 ;;
 esac
 EOF
 printf '#!/bin/sh\necho "$*" >>"$(dirname "$0")/notifications.log"\n' >"$STUBS/notify-send"
@@ -64,9 +64,9 @@ calls() {
 }
 
 # Expected calls for some OpenRGB options and a color, with the Direct
-# fallback of the cooler.
+# fallback of both coolers, by index, in a single call.
 applied() {
-  printf '%s | --device Commander Core --mode Direct --color %s' "$1" "$2"
+  printf '%s | --device 1 --mode Direct --color %s --device 3 --mode Direct --color %s' "$1" "$2" "$2"
 }
 
 state() {
@@ -129,7 +129,7 @@ reset_state
 "$SCRIPT" component "Ghost" off
 calls >/dev/null
 "$SCRIPT" on
-expect "excluded but undetected: no targeted call" "$(calls | grep -c -- '--device [0-9]')" "0"
+expect "excluded but undetected: nothing darkened" "$(calls | grep -c -- '--color 000000')" "0"
 
 echo "rgb.sh toggle with no state"
 reset_state
@@ -169,7 +169,8 @@ NO_DEVICES=1 NO_RGB_RESTORE_TIMEOUT=1 NO_RGB_RESTORE_POLL_SECONDS=1 "$SCRIPT" re
 expect "restore: no RGB device, no failure" "$?" "0"
 reset_state
 EMPTY_POLLS=2 "$SCRIPT" restore 2>/dev/null
-expect "restore: waits for the end of the detection" "$(cat "$STUBS/polls")" "4"
+# 4 polls until the detection is stable, then 1 listing for the Direct fallback.
+expect "restore: waits for the end of the detection" "$(cat "$STUBS/polls")" "5"
 
 echo "rgb.sh input"
 reset_state
