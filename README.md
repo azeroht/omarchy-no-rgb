@@ -27,7 +27,8 @@ each with its own switch: keep the RAM lit and the GPU dark, or the other way ar
 
 ## ✨ Features
 
-- **One-click switch** in the bar, red while the lights are on, with a tooltip such as `RGB: on`.
+- **One-click switch** in the bar, in the theme's alert color (red with most themes) while the
+  lights are on, with a tooltip such as `RGB: on`.
 - **Per component**: every device OpenRGB detects gets its own switch. An excluded component stays
   dark while the others are lit. RAM sticks sharing a name are handled as one component.
 - **Your look, kept**: turning the lights on reapplies the saved color and effect (static,
@@ -35,7 +36,7 @@ each with its own switch: keep the RAM lit and the GPU dark, or the other way ar
 - **Persistent**: the state survives shell restarts and reboots, and is reapplied when the shell
   starts.
 - **Works with picky devices**: controllers that only support the Direct mode (some AIO and fan
-  hubs) get the same color in Direct mode instead of an error.
+  hubs) get the same color in Direct mode instead of an error, even when several share a name.
 - **Multi-monitor aware**: every bar shows the same state, and only one of them restores it.
 - **Scriptable** through an IPC target, for keybindings or automation.
 - **Safe by design**: no shell is ever interpreted, and component names never reach OpenRGB: devices
@@ -101,13 +102,17 @@ configuration file of yours is touched. If you added a keybinding that calls
 
 ## 🖱️ Usage
 
-| Action                   | Result                                                |
-|--------------------------|-------------------------------------------------------|
-| Left click on the icon   | Lights on or off                                      |
-| Right click on the icon  | Open or close the components panel                    |
-| Hover the icon           | Tooltip with the current state                        |
-| Panel top switch         | Lights on or off                                      |
-| Panel component switch   | Include or exclude that component                     |
+<p align="center">
+  <img src="docs/screenshots/components-panel.png" alt="No RGB components panel, the GPU excluded" width="330">
+</p>
+
+| Action                  | Result                             |
+|-------------------------|------------------------------------|
+| Left click on the icon  | Lights on or off                   |
+| Right click on the icon | Open or close the components panel |
+| Hover the icon          | Tooltip with the current state     |
+| Panel top switch        | Lights on or off                   |
+| Panel component switch  | Include or exclude that component  |
 
 While the lights are off, the components stay adjustable but greyed out. An excluded component that
 OpenRGB no longer detects (unplugged, renamed) stays listed, so it can be included again.
@@ -157,17 +162,17 @@ o.bind("SUPER + CTRL + R", "Toggle the RGB lighting", "omarchy-shell azeroht.no-
 
 ## ⚙️ How it works
 
-| File                  | Role                                                                   |
-|-----------------------|------------------------------------------------------------------------|
-| `BarWidget.qml`       | Bar icon, command queue, state file, startup restore, IPC target       |
-| `ComponentsPanel.qml` | Components popup built from the native Omarchy UI kit                  |
-| `Model.js`            | Pure logic: state validation, component labels, command building       |
-| `rgb.sh`              | Saves the state and applies it through the OpenRGB client              |
-| `manifest.json`       | Omarchy plugin manifest                                                |
+| File                  | Role                                                             |
+|-----------------------|------------------------------------------------------------------|
+| `BarWidget.qml`       | Bar icon, command queue, state file, startup restore, IPC target |
+| `ComponentsPanel.qml` | Components popup built from the native Omarchy UI kit            |
+| `Model.js`            | Pure logic: state validation, component labels, command building |
+| `rgb.sh`              | Saves the state and applies it through the OpenRGB client        |
+| `manifest.json`       | Omarchy plugin manifest                                          |
 
-- **Applying**: `rgb.sh` sends the mode and color to every device in one OpenRGB call, sends the
-  color in Direct mode to the devices that refused the mode, then paints the excluded components
-  black, by device index. Each change takes about two seconds; the icon dims meanwhile, and clicks
+- **Applying**: `rgb.sh` sends the mode and color to every device in one OpenRGB call, then, by
+  device index, sends the color in Direct mode to the devices that refused the mode, and black to
+  the excluded components. Each change takes about two seconds; the icon dims meanwhile, and clicks
   queue up in order.
 - **Startup**: when the shell starts, the widget on the first screen runs `rgb.sh restore`, which
   waits until the OpenRGB server has finished detecting the devices (up to 90 s) before reapplying
@@ -177,14 +182,22 @@ o.bind("SUPER + CTRL + R", "Toggle the RGB lighting", "omarchy-shell azeroht.no-
 - **Brightness**: static and breathing colors are dimmed; spectrum and rainbow effects get the
   OpenRGB brightness option, on the devices that support it.
 
+`rgb.sh` reads a few optional environment variables, mostly for the tests:
+
+| Variable                      | Default          | Meaning                                   |
+|-------------------------------|------------------|-------------------------------------------|
+| `NO_RGB_SERVER`               | `127.0.0.1:6742` | OpenRGB server address                    |
+| `NO_RGB_CLIENT_TIMEOUT`       | `15`             | Seconds before an OpenRGB call gives up   |
+| `NO_RGB_RESTORE_TIMEOUT`      | `90`             | Seconds `restore` waits for the detection |
+| `NO_RGB_RESTORE_POLL_SECONDS` | `3`              | Seconds between two detection polls       |
+
 ## 🔒 Security
 
-- Commands run as argument lists (`Quickshell.execDetached` and `Process`), never through a shell
-  string.
+- Commands run as argument lists (`Process`), never through a shell string.
 - Colors, brightness and modes are validated by `rgb.sh`; the state file is sanitized on every
   read, whatever it contains.
-- Component names only live in the state file: OpenRGB receives device indexes read from its own
-  listing.
+- Component names only live in the state file: targeted OpenRGB calls use device indexes read from
+  its own listing.
 - `rgb.sh` runs under a lock, so concurrent calls never corrupt the state file.
 - The plugin only talks to the local OpenRGB server, writes a single state file, and makes no
   network access beyond `127.0.0.1`.

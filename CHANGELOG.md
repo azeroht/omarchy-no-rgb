@@ -5,3 +5,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+### ✨ Features
+
+- ✨ RGB lighting on / off from the Omarchy bar, globally or component by component, through OpenRGB
