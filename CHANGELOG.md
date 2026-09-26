@@ -6,7 +6,7 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.1-rc.1] - 2026-09-26
+## [0.1.1] - 2026-09-26
 
 ### 🐛 Bug fixes
 
