@@ -6,6 +6,12 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.1-rc.1] - 2026-09-26
+
+### 🐛 Bug fixes
+
+- 🔒️ **panel**: render openrgb device names as plain text (e6da230)
+
 ## [0.1.0] - 2026-09-25
 
 ### ✨ Features
