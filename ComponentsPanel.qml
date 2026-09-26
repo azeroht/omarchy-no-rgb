@@ -83,6 +83,7 @@ Column {
         Text {
           width: parent.width
           text: row.modelData.label
+          textFormat: Text.PlainText
           color: panel.foreground
           elide: Text.ElideRight
           font.family: Style.font.family
@@ -92,6 +93,7 @@ Column {
         Text {
           width: parent.width
           text: row.modelData.isMissing ? "Not detected by OpenRGB" : row.modelData.name
+          textFormat: Text.PlainText
           color: panel.foreground
           opacity: panel.captionOpacity
           elide: Text.ElideRight
